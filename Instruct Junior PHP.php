@@ -22,20 +22,7 @@
 
     <?php
         error_reporting(error_reporting() & ~E_WARNING);
-        function generateSummary($data)//this function to generate summary output
-        {
-            $summary = [];
-            foreach ($data as $item) {
-                $country = $item['country'];
-                if (!isset($summary[$country])) {
-                    $summary[$country] = 1;
-                } else {
-                    $summary[$country]++;
-                }
-            }
-            return $summary;
-        }
-        
+
         function readCSV($csvFile) {
             $refs = $centres = $services = $countries = array();
             if (($handle = fopen($csvFile, "r")) !== FALSE) {
@@ -57,86 +44,130 @@
             );
         }
 
+        function generateSummary($data) 
+        {
+            $summary = [];
+            foreach ($data['countries'] as $index => $country) {
+                $country = strtolower($country);
+                if ($country == 'country') { //ignores country header
+                    continue;
+                }
+                if (!isset($summary[$country])) {
+                    $summary[$country] = 0;
+                }
+                $summary[$country]++;
+            }
+            return $summary; 
+        }
+        
+
         function FilterByValues($data, $user_code, $column_a, $column_b)
         {
             $filteredData = [];
-
-            // Loop through each element in the $data[$column_a] array
             foreach ($data[$column_a] as $index => $value) {
-                // Check if the current element matches the $user_code
                 if (strtolower($value) === strtolower($user_code)) {
-                    // If it matches, add the corresponding element from $data[$column_b] to $filteredData
                     $filteredData[] = $data[$column_b][$index];
                 }
             }
-
             return $filteredData;
         }
 
+        $csvFile = 'services.csv';
         $data = [];
-        $csvFile = 'services.csv'; // Adjust the file path accordingly
-   
         $data = readCSV($csvFile);
-        $found_indices = array_keys(array_map('strtolower', $data['countries']), strtolower($user_input_country));
-        if (empty($found_indices)) {
-            echo "User input not found in the 'Country' column.";
-        }
 
 
-        if ($argc < 2) { //This is for the input
-            echo "Usage: php program.php <COUNTRY CODE>\n";
-            $countryCode = strtoupper($argv[1]); 
-            $services = FilterByValues($data, $countryCode, "country", "service");
-
-            echo "Services provided by $countryCode:\n";
+        if ($argc == 2) { //This is for the input
+            echo "Usage: php this_program_name.php <COUNTRY CODE>";
             echo "<br>";
-            foreach ($services as $service) {
-                echo "- $service";
-            }
-    
-            $summary = generateSummary($data);
-            echo "\nSummary:\n";
-            foreach ($summary as $country => $count) {
-                echo "$country: $count services\n";
+            $countryCode = strtoupper($argv[1]); 
+            $found_indices = array_keys(array_map('strtolower', $data['countries']), strtolower($countryCode));
+            if (empty($found_indices)) {
+                echo "User input not found in the 'Country' column.";
                 echo "<br>";
             }
 
-        } else {
-            if (isset($_POST['submitALL']))
-            {
+            $services = FilterByValues($data, $countryCode, "countries", "services");
+
+            echo "Services provided by $countryCode:";
+            echo "<br>";
+            foreach ($services as $service) {
+                echo "- $service";
+                echo "<br>";
+            }
+    
+            $summary = generateSummary($data);
+            echo "Summary:";
+            echo "<br>";
+            foreach ($summary as $country => $count) {
+                echo "$country: $count services";
+                echo "<br>";
+            }
+
+
+        } else if (isset($_POST['submitAll'])){
                 $summary = generateSummary($data); 
-                echo "\nSummary:";
+                echo "Summary:";
+                echo "<br>";
                 foreach ($summary as $country => $count) {
-                    echo "$country: $count services\n";
+                    echo strtoupper($country).": $count services";
+                    echo "<br>";
+                }
+        } else if (isset($_POST['submitCountry'])){
+                $user_input_country = $_POST['user_input_country'];
+                $found_indices = array_keys(array_map('strtolower', $data['countries']), strtolower($user_input_country));
+                if (empty($found_indices)) {
+                    echo "User input not found in the 'Country' column.";
+                    echo "<br>";
+                } else {
+                    //list all services from this country
+                    $services = FilterByValues($data, strtoupper($user_input_country), "countries", "services");
+                    echo strtoupper($user_input_country).' offers the following services:';
+                    echo "<br>";
+                    foreach ($services as $service) {
+                        echo "- $service";
+                        echo "<br>";
+                    }
+                }
+
+        } else if (isset($_POST['submitRef'])){
+                $user_input_ref = $_POST['user_input_ref'];
+                //list all facilities with this ref
+                $centres = FilterByValues($data, $user_input_ref, "refs", "centres");
+                echo strtoupper($user_input_ref).'is the following centre:';
+                echo "<br>";
+                foreach ($centres as $centre) {
+                    echo "- $centre";
                     echo "<br>";
                 }
 
-            } else if (isset($_POST['submitCountry'])){
-                $user_input_country = $_POST['user_input_country'];
-                //list all services from this country
-                $services = FilterByValues($data, $countryCode, "countries", "services");
-                echo ''.$user_input_country;
-
-            } else if (isset($_POST['submitRef'])){
-                $user_input_ref = $_POST['user_input_ref'];
-                //list all facilities with this ref
-                $centres = FilterByValues($data, $countryCode, "refs", "centres");
-                echo ''.$user_input_country;
-
-            } else if (isset($_POST['submitService'])){
+        } else if (isset($_POST['submitService'])){
                 $user_input_service = $_POST['user_input_service'];
                 //list all centres with this service
-                $services = FilterByValues($data, $countryCode, "centres", "services");
-                echo ''.$user_input_country;
+                $services = FilterByValues($data, $user_input_service, "centres", "services");
+                echo 'Centres with'.strtoupper($user_input_service).' service:';
+                echo "<br>";
+                foreach ($services as $service) {
+                    echo "- $service";
+                    echo "<br>";
+                }
 
-            } else if (isset($_POST['submitCentre'])){
-                $user_input_Centre = $_POST['user_input_Centre'];
+        } else if (isset($_POST['submitCentre'])){
+                $user_input_centre = $_POST['user_input_Centre'];
                 // list all services at the centre
-                $centres = FilterByValues($data, $countryCode, "services", "centres");
-                echo ''.$user_input_country;
-            }
-            
+                $centres = FilterByValues($data, $user_input_centre, "services", "centres");
+                echo 'Services available at'.strtoupper($user_input_centre).' centre';
+                echo "<br>";
+                foreach ($centres as $centre) {
+                    echo "- $centre";
+                    echo "<br>";
+                }
         }
+        else {
+            echo'';
+        }
+            
+        
 
     ?>
 </body>    
