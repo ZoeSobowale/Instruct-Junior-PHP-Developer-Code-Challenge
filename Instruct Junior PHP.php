@@ -13,7 +13,7 @@
         <input type="text" name="user_input_centre"/><br><br>
         Enter Service:
         <input type="text" name="user_input_service"/><br><br>
-        <input type="submit" name="submitAll" value="Meets Criteria">
+        <input type="submit" name="submitAll" value="Summary">
         <input type="submit" name="submitCountry" value="Search Countries">
         <input type="submit" name="submitRef" value="Search References">
         <input type="submit" name="submitCentre" value="Search Centres">
@@ -22,25 +22,6 @@
 
     <?php
         error_reporting(error_reporting() & ~E_WARNING);
-
-        if (isset($_POST['submitALL']))
-        {
-            $user_input_country = $_POST['user_input_country'];
-            echo ''.$user_input_country;
-        }
-
-        function filterByCountry($data, $countryCode) //this fuction filters the country code
-        {
-            $filteredData = [];
-            foreach ($data as $item) {
-                if (strcasecmp($item['country'], $countryCode) === 0) {
-                    $filteredData[] = $item['service'];
-                }
-            }
-            return $filteredData;
-        }
-
-
         function generateSummary($data)//this function to generate summary output
         {
             $summary = [];
@@ -76,14 +57,16 @@
             );
         }
 
-        // if ($argc < 2) { //This is for the input
-        //     echo "Usage: php program.php <COUNTRY CODE>\n";
-        //     exit(1);
-        // }
-
-        $countryCode = strtoupper($user_input_country); // strtoupper($argv[1]);
-
-
+        function filterByCountry($data, $countryCode) //this fuction filters the country code
+        {
+            $filteredData = [];
+            foreach ($data as $item) {
+                if (strcasecmp($item['country'], $countryCode) === 0) {
+                    $filteredData[] = $item['service'];
+                }
+            }
+            return $filteredData;
+        }
 
         $data = [];
         $csvFile = 'services.csv'; // Adjust the file path accordingly
@@ -96,17 +79,52 @@
             echo "User input not found in the 'Country' column.";
         }
 
-        $services = filterByCountry($data, $countryCode);
 
-        echo "Services provided by $countryCode:\n";
-        foreach ($services as $service) {
-            echo "- $service\n";
-        }
+        if ($argc < 2) { //This is for the input
+            echo "Usage: php program.php <COUNTRY CODE>\n";
+            $countryCode = strtoupper($argv[1]);
+            $services = filterByCountry($data, $countryCode);
 
-        $summary = generateSummary($data); //this generates and shows the summary of services by country 
-        echo "\nSummary:\n";
-        foreach ($summary as $country => $count) {
-            echo "$country: $count services\n";
+            echo "Services provided by $countryCode:\n";
+            echo "<br>";
+            foreach ($services as $service) {
+                echo "- $service";
+            }
+    
+            $summary = generateSummary($data);
+            echo "\nSummary:\n";
+            foreach ($summary as $country => $count) {
+                echo "$country: $count services\n";
+                echo "<br>";
+            }
+
+        } else {
+            if (isset($_POST['submitALL']))
+            {
+                $summary = generateSummary($data); 
+                echo "\nSummary:";
+                foreach ($summary as $country => $count) {
+                    echo "$country: $count services\n";
+                    echo "<br>";
+                }
+
+            } else if (isset($_POST['submitCountry'])){
+                $user_input_country = $_POST['user_input_country'];
+                echo ''.$user_input_country;
+
+            } else if (isset($_POST['submitRef'])){
+                $user_input_ref = $_POST['user_input_ref'];
+                echo ''.$user_input_country;
+
+            } else if (isset($_POST['submitService'])){
+                $user_input_service = $_POST['user_input_service'];
+                echo ''.$user_input_country;
+
+            } else if (isset($_POST['submitCentre'])){
+                $user_input_Centre = $_POST['user_input_Centre'];
+                echo ''.$user_input_country;
+            }
+            
         }
 
     ?>
