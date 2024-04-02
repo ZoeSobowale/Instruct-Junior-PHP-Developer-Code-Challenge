@@ -78,7 +78,7 @@
 
 
         if ($argc == 2) { //This is for the input
-            echo "Usage: php this_program_name.php <COUNTRY CODE>";
+            echo "Usage: php Instruct-Junior-PHP.php <COUNTRY CODE>";
             echo "<br>";
             $countryCode = strtoupper($argv[1]); 
             $found_indices = array_keys(array_map('strtolower', $data['countries']), strtolower($countryCode));
